@@ -1,81 +1,103 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-import mysql.connector
-from dotenv import load_dotenv
-import os
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.responses import JSONResponse
 
-# Carregar as variáveis do .env
-load_dotenv()
+import mysql.connector
+
+from db.service import init_db, create_new_user, get_user_by_username
+
+from schemas.schemas import Request, RequestBody, ReqMetadata, ReqUser
+
+from utils.hash_argon2 import hash_password_argon2, verify_password_argon2
+from utils.hash_pbkdf2 import hash_password_pbkdf2, verify_password_pbkdf2
+from utils.hash_migration import verify_hashing_type, change_hash_type
+from utils.crypt import decrypt_body
+
 
 app = FastAPI()
 
 
-# Configurações do banco de dados MySQL obtidas do arquivo .env
-db_config = {
-    'host': os.getenv('DB_HOST'),
-    'user': os.getenv('DB_USER'),
-    'password': os.getenv('DB_PASSWORD'),
-    'database': os.getenv('DB_NAME')
-}
-
-
-# Modelo de requisição para a rota de login
-class UserLogin(BaseModel):
-    username: str
-    password: str
-
-
-# Conecta ao banco de dados MySQL
-def get_db_connection():
-    connection = mysql.connector.connect(**db_config)
-    return connection
-
-
-# Inicialização do banco de dados (criando tabela se não existir)
-def init_db():
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    
-    # Verificar e criar a tabela de usuários
-    create_table_query = """
-    CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        username VARCHAR(255) NOT NULL UNIQUE,
-        password VARCHAR(255) NOT NULL
-    );
-    """
-    cursor.execute(create_table_query)
-    connection.commit()
-    cursor.close()
-    connection.close()
-
-
-# Função para hashear a senha (to do)
-def hash_password(password: str) -> str:
-    # TODO: Implementar a lógica para gerar o hash
-    pass
-
-
-# Rota de login
-@app.post("/login")
-def login(user: UserLogin):
-    hashed_password = hash_password(user.password)  # Hash da senha
-    try:
-        connection = get_db_connection()
-        cursor = connection.cursor()
-
-        # Armazenar usuário e hash da senha no banco de dados
-        query = "INSERT INTO users (username, password) VALUES (%s, %s)"
-        cursor.execute(query, (user.username, hashed_password))
-        connection.commit()
-        cursor.close()
-        connection.close()
-        return {"message": "Usuário cadastrado com sucesso"}
-    except mysql.connector.Error as err:
-        raise HTTPException(status_code=500, detail=f"Erro ao se conectar ao banco de dados: {err}")
-
-
-# Inicializar o banco de dados ao iniciar o aplicativo
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+@app.on_event("startup")
+def on_startup():
     init_db()
+
+
+@app.get("/")
+def test_connection():
+    return JSONResponse(content={"message": "server is running"}, status_code=200)
+
+
+@app.post("/signup/{hash_type}")
+def signup(hash_type: str, request: Request):
+
+    if hash_type.lower() not in ["argon2", "pbkdf2"]:
+        raise HTTPException(status_code=400, detail="Invalid hash type")
+
+    body = bytes.fromhex(request.body)
+    iv = bytes.fromhex(request.iv)
+    decryted_body: RequestBody = decrypt_body(iv, body)
+
+    user: ReqUser = decryted_body["user"]
+    if hash_type.lower() == "argon2":
+        hashed_password = hash_password_argon2(user["password"])
+    else:
+        hashed_password = hash_password_pbkdf2(user["password"])
+
+    metadata: ReqMetadata = decryted_body["metadata"]
+
+    try:
+        user_id = create_new_user(
+            user["username"], hashed_password, metadata["created_at"]
+        )
+
+        response = JSONResponse(
+            content={"message": "user created", "id": user_id}, status_code=201
+        )
+
+        return response
+
+    except mysql.connector.Error as err:
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao se conectar ao banco de dados: {err}"
+        )
+
+
+@app.post("/login")
+async def login(request: Request, background_tasks: BackgroundTasks):
+
+    body = bytes.fromhex(request.body)
+    iv = bytes.fromhex(request.iv)
+    decryted_body: RequestBody = decrypt_body(iv, body)
+
+    user: ReqUser = decryted_body["user"]
+
+    try:
+        fetched_user = get_user_by_username(user["username"])
+
+        if fetched_user is None:
+            raise HTTPException(status_code=401, detail="Auth failed")
+
+        if verify_hashing_type(fetched_user["password"]) == "argon2":
+            if verify_password_argon2(fetched_user["password"], user["password"]):
+                response = JSONResponse(
+                    content={"message": "login successful"}, status_code=200
+                )
+                return response
+            else:
+                raise HTTPException(status_code=401, detail="Auth failed")
+        else:
+            if verify_password_pbkdf2(fetched_user["password"], user["password"]):
+                response = JSONResponse(
+                    content={"message": "login successful"}, status_code=200
+                )
+                background_tasks.add_task(
+                    change_hash_type, user["username"], user["password"]
+                )
+
+                return response
+            else:
+                raise HTTPException(status_code=401, detail="Auth failed")
+
+    except mysql.connector.Error as err:
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao se conectar ao banco de dados: {err}"
+        )
