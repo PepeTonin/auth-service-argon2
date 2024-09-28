@@ -18,3 +18,7 @@ O sistema utiliza criptografia end-to-end para garantir a confidencialidade dos 
     - implementado utilizando a biblioteca [argon2-cffi: Argon2 for Python](https://pypi.org/project/argon2-cffi/)
 - **AES:** Algoritmo de criptografia simétrica usado para proteger as comunicações entre cliente e servidor.
     - implementado utilizando a biblioteca [cryptography](https://pypi.org/project/cryptography/)
+
+#### Diagrama do sistema
+
+![diagram do sistema](/assets/diagrama-sistema-argon2.jpg)
