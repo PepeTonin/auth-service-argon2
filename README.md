@@ -42,7 +42,7 @@ O sistema utiliza criptografia end-to-end para garantir a confidencialidade dos 
           "user": {
               "username": <username usario>,
               "password": <senha usuario>
-          }
+          },
           "metadata": {
               "created_at": <time stamp com a data de criação - formato YYYY-MM-DD HH:MM:SS"
           }
