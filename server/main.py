@@ -55,10 +55,8 @@ def signup(hash_type: str, request: Request):
 
         return response
 
-    except mysql.connector.Error as err:
-        raise HTTPException(
-            status_code=500, detail=f"Erro ao se conectar ao banco de dados: {err}"
-        )
+    except mysql.connector.Error as _:
+        raise HTTPException(status_code=500, detail="Failed to connect to the database")
 
 
 @app.post("/login")
@@ -98,6 +96,4 @@ async def login(request: Request, background_tasks: BackgroundTasks):
                 raise HTTPException(status_code=401, detail="Auth failed")
 
     except mysql.connector.Error as err:
-        raise HTTPException(
-            status_code=500, detail=f"Erro ao se conectar ao banco de dados: {err}"
-        )
+        raise HTTPException(status_code=500, detail="Failed to connect to the database")
