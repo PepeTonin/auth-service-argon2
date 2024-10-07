@@ -9,15 +9,14 @@ O sistema utiliza criptografia end-to-end para garantir a confidencialidade dos 
 - **Armazenamento seguro de senhas:** As senhas são armazenadas no servidor utilizando **Argon2**, um dos algoritmos mais avançados e seguros para armazenamento de senhas.
 - **Atualização de hashes antigas:** Quando um usuário com uma senha armazenada em um formato de hash antigo faz login, o sistema automaticamente atualiza a senha para o formato Argon2.
 
-
 ### Tecnologias Utilizadas
 
 - **FastAPI:** Framework web para criar APIs rápidas e seguras.
 - **MySQL:** Banco de dados relacional usado para armazenar informações dos usuários.
 - **Argon2:** Algoritmo de hashing de senhas utilizado para garantir a segurança no armazenamento.
-    - implementado utilizando a biblioteca [argon2-cffi: Argon2 for Python](https://pypi.org/project/argon2-cffi/)
+  - implementado utilizando a biblioteca [argon2-cffi: Argon2 for Python](https://pypi.org/project/argon2-cffi/)
 - **AES:** Algoritmo de criptografia simétrica usado para proteger as comunicações entre cliente e servidor.
-    - implementado utilizando a biblioteca [cryptography](https://pypi.org/project/cryptography/)
+  - implementado utilizando a biblioteca [cryptography](https://pypi.org/project/cryptography/)
 
 ### Diagrama do sistema
 
@@ -26,51 +25,109 @@ O sistema utiliza criptografia end-to-end para garantir a confidencialidade dos 
 ### Endpoints, payloads e responses
 
 #### `/signup/{hash_type}`
-- Tipo: `POST`
-- Descrição: Cria um novo usuário no sistema, armazenando a senha utilizando o algoritmo passado no *path paramenter*
-- Payload:
-    - Payload enviado na requisição:
-      ```json
-      {
-          "body": <corpo da mensagem encriptado em hex>
-          "iv": <iv em texto claro em hex>
-      }
-      ```
-    - Corpo da mensagem antes de encriptar:
-      ```json
-      {
-          "user": {
-              "username": <username usario>,
-              "password": <senha usuario>
-          },
-          "metadata": {
-              "created_at": <time stamp com a data de criação - formato YYYY-MM-DD HH:MM:SS"
-          }
-      }
-      ```
-- Responses:
-    - hash type diferente de "argon2" ou "pbkdf2"
-      ```json
-      {
-          "status_code": 400,
-          "detail": "Invalid hash type"
-      }
-      ```
-    - problema na conexão com o banco
-      ```json
-      {
-          "status_code": 500,
-          "detail": "Failed to connect to the database"
-      }
-      ```
-    - ok
-      ```json
-      {
-          "status_code": 201,
-          "message": "user created",
-          "id": <user_id>
-      }
-      ```
-- `/login`
 
-      
+- Tipo: `POST`
+- Descrição: Cria um novo usuário no sistema, armazenando a senha utilizando o algoritmo passado no _path paramenter_
+- Payload:
+  - Payload enviado na requisição:
+    ```json
+    {
+        "body": <corpo da mensagem encriptado em hex>,
+        "iv": <iv em texto claro em hex>
+    }
+    ```
+  - Corpo da mensagem antes de encriptar:
+    ```json
+    {
+        "user": {
+            "username": <username usario>,
+            "password": <senha usuario>
+        },
+        "metadata": {
+            "created_at": <time stamp com a data de criação - formato 'YYYY-MM-DD HH:MM:SS'>
+        }
+    }
+    ```
+- Responses:
+  - hash type diferente de "argon2" ou "pbkdf2"
+    ```
+        status_code: 400
+    ```
+    ```json
+    {
+      "detail": "Invalid hash type"
+    }
+    ```
+  - problema na conexão com o banco
+    ```
+        status_code: 500
+    ```
+    ```json
+    {
+      "detail": "Failed to connect to the database"
+    }
+    ```
+  - ok
+    ```
+        status_code: 201
+    ```
+    ```json
+    {
+        "message": "User created",
+        "id": <user_id>
+    }
+    ```
+
+#### `/login`
+
+- Tipo: `POST`
+- Descrição: Recebe as credenciais do usuário e verifica se estão corretas. Caso a autenticação seja bem sucedida e a senha esteja armazenada em um formato de hash diferente de Argon2, o sistema atualiza automaticamente a hash para o formato Argon2 no banco de dados. Se a senha já estiver no formato Argon2, nenhuma atualização é necessária.
+- Payload:
+  - Payload enviado na requisição:
+    ```json
+    {
+        "body": <corpo da mensagem encriptado em hex>,
+        "iv": <iv em texto claro em hex>
+    }
+    ```
+  - Corpo da mensagem antes de encriptar:
+    ```json
+    {
+        "user": {
+            "username": <username usario>,
+            "password": <senha usuario>
+        },
+        "metadata": {
+            "created_at": <time stamp com a data da tentativa de login - formato 'YYYY-MM-DD HH:MM:SS'>
+        }
+    }
+    ```
+- Responses:
+  - email ou senha incorretos
+    ```
+        status_code: 401
+    ```
+    ```json
+    {
+      "detail": "Auth failed"
+    }
+    ```
+  - problema na conexão com o banco
+    ```
+        status_code: 500
+    ```
+    ```json
+    {
+      "detail": "Failed to connect to the database"
+    }
+    ```
+  - ok
+    ```
+        status_code: 200
+    ```
+    ```json
+    {
+        "message": "Login successful",
+        "id": <user_id>
+    }
+    ```

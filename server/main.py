@@ -50,7 +50,7 @@ def signup(hash_type: str, request: Request):
         )
 
         response = JSONResponse(
-            content={"message": "user created", "id": user_id}, status_code=201
+            content={"message": "User created", "id": user_id}, status_code=201
         )
 
         return response
@@ -77,7 +77,8 @@ async def login(request: Request, background_tasks: BackgroundTasks):
         if verify_hashing_type(fetched_user["password"]) == "argon2":
             if verify_password_argon2(fetched_user["password"], user["password"]):
                 response = JSONResponse(
-                    content={"message": "login successful"}, status_code=200
+                    content={"message": "Login successful", "id": fetched_user["id"]},
+                    status_code=200,
                 )
                 return response
             else:
@@ -85,7 +86,8 @@ async def login(request: Request, background_tasks: BackgroundTasks):
         else:
             if verify_password_pbkdf2(fetched_user["password"], user["password"]):
                 response = JSONResponse(
-                    content={"message": "login successful"}, status_code=200
+                    content={"message": "Login successful", "id": fetched_user["id"]},
+                    status_code=200,
                 )
                 background_tasks.add_task(
                     change_hash_type, user["username"], user["password"]
