@@ -47,7 +47,7 @@ iv = os.urandom(16)
 
 # cria um dicionário com os dados do usuario
 username = ''
-user = {"username": username, "password": "passwordteste"}
+user = {"username": username, "password": "123"}
 
 #'$pbkdf2$sha256$75c09733ef8c609dce41b6b3f3b48da9$600000$27c2ea62cc3ac39c37a7e57ed7518157affb1a0cf845a7e4a9576eb1cc14730b'
 #'$argon2id$v=19$m=65536,t=3,p=4$LLFjpByOgSboQF9H3HT3FA$NhdooaoGzixO5na21bIgzzM7kzGPiDdFFWVsCwn63qI'

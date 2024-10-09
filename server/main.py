@@ -64,9 +64,9 @@ async def login(request: Request, background_tasks: BackgroundTasks):
 
     body = bytes.fromhex(request.body)
     iv = bytes.fromhex(request.iv)
-    decryted_body: RequestBody = decrypt_body(iv, body)
+    decrypted_body: RequestBody = decrypt_body(iv, body)
 
-    user: ReqUser = decryted_body["user"]
+    user: ReqUser = decrypted_body["user"]
 
     try:
         fetched_user = get_user_by_username(user["username"])

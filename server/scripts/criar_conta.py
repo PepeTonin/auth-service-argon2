@@ -59,8 +59,8 @@ for i in range(n):
     iv = os.urandom(16)
 
     # cria um dicionário com os dados do usuario
-    username = generate_random_username(random.randint(5, 10))
-    user = {"username": username, "password": "passwordteste"}
+    username = generate_random_username(random.randint(3, 6))
+    user = {"username": username, "password": "123"}
 
     # metadados
     metadata = {"created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
