@@ -131,3 +131,48 @@ O sistema utiliza criptografia end-to-end para garantir a confidencialidade dos 
         "id": <user_id>
     }
     ```
+
+### Como rodar o projeto
+
+1. **Instale as dependências**:
+
+   - No diretório da _view_, execute:
+     ```bash
+     pip install -r requirements.txt
+     ```
+   - No diretório do _server_, execute:
+     ```bash
+     pip install -r requirements.txt
+     ```
+
+2. **Configure o banco de dados MySQL**:
+
+   - Certifique-se de que o MySQL esteja instalado e rodando no seu computador.
+   - Crie o banco de dados necessário para o projeto.
+    - Não é necessário criar tabelas, o server se encarrega disso.
+
+3. **Configure o arquivo `.env`**:
+
+   - No diretório do _server_, crie um arquivo `.env` com as seguintes variáveis:
+     ```
+     DB_HOST=<seu_host>
+     DB_USER=<seu_usuario>
+     DB_PASSWORD=<sua_senha>
+     DB_NAME=<nome_do_banco_de_dados>
+     key=<sua_chave_de_criptografia>
+     ```
+   - No diretório da _view_, também crie um arquivo `.env` com a variável:
+     ```
+     key=<sua_chave_de_criptografia>
+     ```
+
+4. **Execute o projeto**:
+   - No diretório do _server_, execute o FastAPI em modo de desenvolvimento:
+     ```bash
+     fastapi dev main.py
+     ```
+     
+   - No diretório da _view_, execute:
+     ```bash
+     python main.py
+     ```
